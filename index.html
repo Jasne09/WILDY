@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para Ti Hija Wildy</title>
+    <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    overflow: hidden;
+}
+
+canvas {
+    display: block;
+}
+    </style>
+</head>
+<body>
+    <canvas id="canvas1"></canvas>
+    <!-- El ID debe coincidir exactamente con el de JS -->
+<audio id="miMusica" preload="auto">
+    <source src="musica.mp3" type="audio/mpeg">
+    Tu navegador no soporta el elemento de audio.
+</audio>
+    <script>
+        window.onload = function() {
+    const canvas = document.getElementById('canvas1');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Optimización para getImageData
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+    let textIndex = 0;
+    const texts = ["FELIZ CUMPLEAÑOS", "HIJA HERMOSA", " Y PRECIOSA", "GRACIAS", "POR EXISTIR", "TE AMAMOS", "INMENSAMENTE", "HIJA QUERIDA", "SIEMPRE SERÁS", "NUESTRA PEQUEÑA", "WILDY", "❤️"];
+
+    class Particle {
+        constructor(x, y) {
+            // Empiezan en una posición aleatoria
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.destX = x;
+            this.destY = y;
+            this.size = 1.5;
+            this.color = '#ff2d55';
+            this.ease = 0.08;
+        }
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        update() {
+            // Movimiento fluido hacia el destino
+            this.x += (this.destX - this.x) * this.ease;
+            this.y += (this.destY - this.y) * this.ease;
+        }
+    }
+
+    function initText(text) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        const esCorazon = (text === "❤️");
+        let fontSize = esCorazon ? Math.min(canvas.width, canvas.height) * 0.5 : Math.min(canvas.width / 6, 100);
+        
+        ctx.font = "bold " + fontSize + "px Arial";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        // Captura de pixeles
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        particles = [];
+        let gap = esCorazon ? 3 : 5; // Densidad de partículas
+
+        for (let y = 0; y < canvas.height; y += gap) {
+            for (let x = 0; x < canvas.width; x += gap) {
+                const index = (y * canvas.width + x) * 4;
+                const alpha = pixels[index + 3];
+                if (alpha > 128) {
+                    particles.push(new Particle(x, y));
+                }
+            }
+        }
+    }
+
+    function animate() {
+        // Fondo negro con rastro leve
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+        }
+        requestAnimationFrame(animate);
+    }
+
+    // --- REPRODUCCIÓN DE MÚSICA (CORREGIDO) ---
+    window.addEventListener('click', function() {
+        const audio = document.getElementById('miMusica');
+        if (audio) {
+            audio.loop = true;
+            audio.play().then(() => {
+                console.log("Reproduciendo con éxito");
+            }).catch(error => {
+                console.log("Error al reproducir:", error);
+            });
+        }
+    }, { once: true });
+
+    // Inicio
+    initText(texts[0]);
+    animate();
+
+    // Cambio de texto cada 3.5 segundos
+    setInterval(function() {
+        textIndex = (textIndex + 1) % texts.length;
+        initText(texts[textIndex]);
+    }, 3500);
+
+    // Ajuste de pantalla si se cambia el tamaño de la ventana
+    window.addEventListener('resize', function() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initText(texts[textIndex]);
+    });
+};
+    </script>
+</body>
+</html>
